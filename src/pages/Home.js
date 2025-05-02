@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -250,6 +250,7 @@ export default function Home() {
   const theme = useTheme();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedMood, setSelectedMood] = useState(null);
+  const navigate = useNavigate();
 
   const handleMouseMove = (e) => {
     setMousePosition({
@@ -440,7 +441,7 @@ export default function Home() {
               </Button>
               <Button
                 component={Link}
-                to="/lookbook"
+                to="/products"
                 variant="outlined"
                 sx={{
                   color: '#2C3E50',
@@ -453,7 +454,7 @@ export default function Home() {
                   },
                 }}
               >
-                i'm just browsing
+                I'm just browsing
               </Button>
             </Box>
             <MoodWidget>
