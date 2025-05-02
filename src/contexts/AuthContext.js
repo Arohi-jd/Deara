@@ -23,21 +23,19 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signIn = (userData) => {
+    setUser(userData);
+  };
+
+  const signOut = () => {
+    setUser(null);
+  };
+
   const value = {
     user,
     loading,
-    signIn: async (email, password) => {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      return data;
-    },
-    signOut: async () => {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    },
+    signIn,
+    signOut,
   };
 
   return (
