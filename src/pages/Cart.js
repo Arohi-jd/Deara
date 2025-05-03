@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -16,6 +16,11 @@ import {
   CardMedia,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -24,10 +29,11 @@ import {
 } from '@mui/icons-material';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const {
     cartItems,
     loading,
@@ -35,6 +41,38 @@ export default function Cart() {
     removeFromCart,
     getTotal,
   } = useCart();
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setError('');
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        signIn(data.user);
+        handleClose();
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
 
   const handleCheckout = () => {
     navigate('/checkout');
@@ -48,10 +86,57 @@ export default function Cart() {
         </Alert>
         <Button
           variant="contained"
-          onClick={() => navigate('/login')}
+          onClick={handleClickOpen}
         >
           Sign In
         </Button>
+
+        <Dialog open={open} onClose={handleClose}>
+          <DialogTitle>Login Required</DialogTitle>
+          <form onSubmit={handleLogin}>
+            <DialogContent>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Test Credentials:
+                <br />
+                Email: arohijadhav172@gmail.com
+                <br />
+                Password: 123456
+              </Alert>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Email"
+                type="email"
+                fullWidth
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <TextField
+                margin="dense"
+                label="Password"
+                type="password"
+                fullWidth
+                variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleClose}>Cancel</Button>
+              <Button type="submit" variant="contained" sx={{ bgcolor: '#FF6B35', '&:hover': { bgcolor: '#FF8C5A' } }}>
+                Login
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
       </Container>
     );
   }
