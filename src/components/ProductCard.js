@@ -11,11 +11,17 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import { ShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
@@ -66,7 +72,7 @@ const PriceTypography = styled(Typography)(({ theme }) => ({
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const { addToCart } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -74,11 +80,50 @@ export default function ProductCard({ product }) {
     message: '',
     severity: 'success',
   });
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setError('');
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        signIn(data.user);
+        handleClose();
+        // After successful login, add the item to cart
+        await addToCart(product.id);
+        setSnackbar({
+          open: true,
+          message: 'Product added to cart!',
+          severity: 'success',
+        });
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
 
   const handleAddToCart = async () => {
     try {
       if (!user) {
-        navigate('/login');
+        handleClickOpen();
         return;
       }
 
@@ -196,6 +241,53 @@ export default function ProductCard({ product }) {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Login Required</DialogTitle>
+        <form onSubmit={handleLogin}>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Test Credentials:
+              <br />
+              Email: arohijadhav172@gmail.com
+              <br />
+              Password: 123456
+            </Alert>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Email"
+              type="email"
+              fullWidth
+              variant="outlined"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <TextField
+              margin="dense"
+              label="Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button type="submit" variant="contained" sx={{ bgcolor: '#FF6B35', '&:hover': { bgcolor: '#FF8C5A' } }}>
+              Login
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </>
   );
 }
