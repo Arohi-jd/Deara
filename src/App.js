@@ -1,121 +1,49 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import Products from './pages/Products';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Admin from './pages/Admin';
-import Login from './pages/Login';
-import About from './pages/About';
+
+const Home = lazy(() => import('./pages/Home'));
+const Products = lazy(() => import('./pages/Products'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Admin = lazy(() => import('./pages/Admin'));
+const About = lazy(() => import('./pages/About'));
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#E6E6FA', // Lavender
-      light: '#F5F5FF',
-      dark: '#D8D8F0',
+      main: '#FF6B35',
+      light: '#FF8C5A',
+      dark: '#E55A2B',
     },
     secondary: {
-      main: '#FFB6C1', // Blush Pink
-      light: '#FFE4E1',
-      dark: '#FFC0CB',
+      main: '#E6E6FA',
+      light: '#F0F0FF',
+      dark: '#D0D0E8',
     },
-    accent: {
-      main: '#FFA500', // Orange
-      light: '#FFD700',
-      dark: '#FF8C00',
-    },
-    text: {
-      primary: '#000000',
-      secondary: '#4A4A4A',
+    error: {
+      main: '#f44336',
     },
     background: {
-      default: '#F5F5FF',
-      paper: '#FFFFFF',
+      default: '#ffffff',
+      paper: '#ffffff',
     },
   },
   typography: {
-    fontFamily: '"Poppins", "Inter", sans-serif',
-    h1: {
-      fontWeight: 700,
-      fontSize: '3.5rem',
-      background: 'linear-gradient(45deg, #FFB6C1 30%, #FFA500 90%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-    },
-    h2: {
-      fontWeight: 600,
-      fontSize: '2.5rem',
-    },
-    h3: {
-      fontWeight: 600,
-      fontSize: '2rem',
-    },
-    h4: {
-      fontWeight: 500,
-      fontSize: '1.75rem',
-    },
-    h5: {
-      fontWeight: 500,
-      fontSize: '1.5rem',
-    },
-    h6: {
-      fontWeight: 500,
-      fontSize: '1.25rem',
-    },
-    button: {
-      textTransform: 'none',
-      fontWeight: 500,
-    },
+    fontFamily: '"Inter", "Roboto", sans-serif',
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 25,
-          padding: '8px 24px',
           textTransform: 'none',
-          fontWeight: 500,
-          transition: 'all 0.3s ease',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-          },
-        },
-        contained: {
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-          transition: 'all 0.3s ease',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-          },
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 12,
-          },
+          borderRadius: 8,
         },
       },
     },
@@ -143,15 +71,29 @@ function App() {
                   flexGrow: 1,
                 }}
               >
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/about" element={<About />} />
-                </Routes>
+                <Suspense
+                  fallback={(
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '50vh',
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
+                  )}
+                >
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/about" element={<About />} />
+                  </Routes>
+                </Suspense>
               </Box>
               <Footer />
             </Box>
