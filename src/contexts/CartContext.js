@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from './AuthContext';
 
@@ -66,7 +66,10 @@ export function CartProvider({ children }) {
         throw new Error('Failed to fetch cart items. Please try again later.');
       }
 
-      setCartItems(items || []);
+      const nextItems = items || [];
+      setCartItems(nextItems);
+
+      return { cartData, items: nextItems };
     } catch (error) {
       console.error('Error in fetchCart:', error);
       throw error;
@@ -77,28 +80,40 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     if (user) {
-      fetchCart();
+      fetchCart().catch(error => {
+        console.error('Failed to fetch cart:', error);
+        setLoading(false);
+      });
+    } else {
+      setCart(null);
+      setCartItems([]);
+      setLoading(false);
     }
   }, [user, fetchCart]);
 
-  const addToCart = async (productId, quantity = 1) => {
+  const addToCart = useCallback(async (productId, quantity = 1) => {
     try {
       if (!user) {
         throw new Error('You must be logged in to add items to cart');
       }
 
       // Ensure cart exists
-      if (!cart) {
-        await fetchCart();
+      let activeCart = cart;
+      let activeItems = cartItems;
+
+      if (!activeCart) {
+        const result = await fetchCart();
+        activeCart = result?.cartData;
+        activeItems = result?.items || [];
       }
 
       // Double check cart exists after fetch
-      if (!cart) {
+      if (!activeCart) {
         throw new Error('Failed to create cart. Please try again.');
       }
 
       // Check if item already exists in cart
-      const existingItem = cartItems.find(item => item.product_id === productId);
+      const existingItem = activeItems.find(item => item.product_id === productId);
 
       if (existingItem) {
         // Update quantity
@@ -116,7 +131,7 @@ export function CartProvider({ children }) {
         const { error } = await supabase
           .from('cart_items')
           .insert([{
-            cart_id: cart.id,
+            cart_id: activeCart.id,
             product_id: productId,
             quantity: quantity
           }]);
@@ -134,9 +149,9 @@ export function CartProvider({ children }) {
       console.error('Error in addToCart:', error);
       throw error;
     }
-  };
+  }, [user, cart, cartItems, fetchCart]);
 
-  const updateQuantity = async (itemId, quantity) => {
+  const updateQuantity = useCallback(async (itemId, quantity) => {
     try {
       if (quantity <= 0) {
         await removeFromCart(itemId);
@@ -157,9 +172,9 @@ export function CartProvider({ children }) {
       console.error('Error in updateQuantity:', error);
       throw error;
     }
-  };
+  }, [fetchCart]);
 
-  const removeFromCart = async (itemId) => {
+  const removeFromCart = useCallback(async (itemId) => {
     try {
       const { error } = await supabase
         .from('cart_items')
@@ -175,9 +190,9 @@ export function CartProvider({ children }) {
       console.error('Error in removeFromCart:', error);
       throw error;
     }
-  };
+  }, [fetchCart]);
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     try {
       if (!cart) return;
 
@@ -195,27 +210,38 @@ export function CartProvider({ children }) {
       console.error('Error in clearCart:', error);
       throw error;
     }
-  };
+  }, [cart]);
 
-  const getTotal = () => {
+  const getTotal = useCallback(() => {
     return cartItems.reduce((total, item) => {
       return total + (item.products.price * item.quantity);
     }, 0);
-  };
+  }, [cartItems]);
+
+  const contextValue = useMemo(() => ({
+    cart,
+    cartItems,
+    loading,
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    getTotal,
+    fetchCart,
+  }), [
+    cart,
+    cartItems,
+    loading,
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    fetchCart,
+  ]);
 
   return (
     <CartContext.Provider
-      value={{
-        cart,
-        cartItems,
-        loading,
-        addToCart,
-        updateQuantity,
-        removeFromCart,
-        clearCart,
-        getTotal,
-        fetchCart
-      }}
+      value={contextValue}
     >
       {children}
     </CartContext.Provider>
