@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   Card,
   CardMedia,
@@ -70,8 +69,7 @@ const PriceTypography = styled(Typography)(({ theme }) => ({
   fontSize: '1.4rem',
 }));
 
-export default function ProductCard({ product }) {
-  const navigate = useNavigate();
+function ProductCard({ product }) {
   const { user, signIn } = useAuth();
   const { addToCart } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -85,16 +83,18 @@ export default function ProductCard({ product }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+  const formattedPrice = useMemo(() => Number(product.price || 0).toFixed(2), [product.price]);
 
-  const handleClose = () => {
+  const handleClickOpen = useCallback(() => {
+    setOpen(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
     setOpen(false);
     setError('');
-  };
+  }, []);
 
-  const handleLogin = async (e) => {
+  const handleLogin = useCallback(async (e) => {
     e.preventDefault();
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -118,9 +118,9 @@ export default function ProductCard({ product }) {
     } catch (error) {
       setError(error.message);
     }
-  };
+  }, [addToCart, email, password, product.id, signIn, handleClose]);
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     try {
       if (!user) {
         handleClickOpen();
@@ -141,15 +141,15 @@ export default function ProductCard({ product }) {
         severity: 'error',
       });
     }
-  };
+  }, [addToCart, handleClickOpen, product.id, user]);
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+  const handleCloseSnackbar = useCallback(() => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  }, []);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-  };
+  const toggleFavorite = useCallback(() => {
+    setIsFavorite((prev) => !prev);
+  }, []);
 
   return (
     <>
@@ -201,9 +201,7 @@ export default function ProductCard({ product }) {
             {product.name}
           </Typography>
 
-          <PriceTypography variant="h6">
-            ${product.price.toFixed(2)}
-          </PriceTypography>
+          <PriceTypography variant="h6">${formattedPrice}</PriceTypography>
         </StyledCardContent>
 
         <StyledCardActions>
@@ -291,3 +289,5 @@ export default function ProductCard({ product }) {
     </>
   );
 }
+
+export default memo(ProductCard);
