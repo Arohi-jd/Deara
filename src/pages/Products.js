@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Grid, Typography, Box, CircularProgress } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Container, Grid, Typography, Box, CircularProgress, Alert, Button } from '@mui/material';
 import ProductCard from '../components/ProductCard';
 import { supabase } from '../supabaseClient';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     try {
+      setLoading(true);
+      setError('');
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -25,10 +25,15 @@ export default function Products() {
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error.message);
+      setError(error.message || 'Failed to load products. Please try again.');
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   if (loading) {
     return (
@@ -42,6 +47,23 @@ export default function Products() {
       >
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Alert
+          severity="error"
+          action={(
+            <Button color="inherit" size="small" onClick={fetchProducts}>
+              Retry
+            </Button>
+          )}
+        >
+          {error}
+        </Alert>
+      </Container>
     );
   }
 
@@ -64,27 +86,25 @@ export default function Products() {
         Deara T-Shirts
       </Typography>
 
-      <Grid 
-        container 
+      <Grid
+        container
         spacing={4}
-        sx={{ 
+        sx={{
           justifyContent: 'center',
           maxWidth: '1400px',
           margin: '0 auto',
           '& > .MuiGrid-item': {
-            width: '33.333%',
-            maxWidth: '400px',
-            minWidth: '300px',
-            padding: '0 16px',
+            width: { xs: '100%', sm: '50%', md: '33.333%' },
+            maxWidth: '420px',
           }
         }}
       >
         {products.map((product) => (
-          <Grid 
-            item 
-            key={product.id} 
-            xs={12} 
-            sm={6} 
+          <Grid
+            item
+            key={product.id}
+            xs={12}
+            sm={6}
             md={4}
           >
             <ProductCard product={product} />
