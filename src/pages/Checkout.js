@@ -94,7 +94,7 @@ export default function Checkout() {
 
       // Clear cart
       await clearCart();
-      navigate('/order-success');
+      navigate('/', { state: { orderPlaced: true } });
     } catch (error) {
       console.error('Error placing order:', error);
       setError(error.message);
@@ -119,7 +119,7 @@ export default function Checkout() {
         </Alert>
         <Button
           variant="contained"
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/cart')}
         >
           Sign In
         </Button>
@@ -146,7 +146,7 @@ export default function Checkout() {
   const total = getTotal();
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container component="form" maxWidth="lg" sx={{ py: 4 }} onSubmit={handleSubmit}>
       <Typography variant="h4" component="h1" gutterBottom>
         Checkout
       </Typography>
@@ -313,7 +313,7 @@ export default function Checkout() {
               fullWidth
               variant="contained"
               size="large"
-              onClick={handleSubmit}
+              type="submit"
               disabled={processing}
             >
               {processing ? 'Processing...' : 'Place Order'}

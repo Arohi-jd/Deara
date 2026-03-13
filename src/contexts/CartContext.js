@@ -151,6 +151,24 @@ export function CartProvider({ children }) {
     }
   }, [user, cart, cartItems, fetchCart]);
 
+  const removeFromCart = useCallback(async (itemId) => {
+    try {
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) {
+        console.error('Error removing from cart:', error);
+        throw new Error('Failed to remove item from cart. Please try again.');
+      }
+      await fetchCart();
+    } catch (error) {
+      console.error('Error in removeFromCart:', error);
+      throw error;
+    }
+  }, [fetchCart]);
+
   const updateQuantity = useCallback(async (itemId, quantity) => {
     try {
       if (quantity <= 0) {
@@ -172,25 +190,7 @@ export function CartProvider({ children }) {
       console.error('Error in updateQuantity:', error);
       throw error;
     }
-  }, [fetchCart]);
-
-  const removeFromCart = useCallback(async (itemId) => {
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) {
-        console.error('Error removing from cart:', error);
-        throw new Error('Failed to remove item from cart. Please try again.');
-      }
-      await fetchCart();
-    } catch (error) {
-      console.error('Error in removeFromCart:', error);
-      throw error;
-    }
-  }, [fetchCart]);
+  }, [fetchCart, removeFromCart]);
 
   const clearCart = useCallback(async () => {
     try {
@@ -236,6 +236,7 @@ export function CartProvider({ children }) {
     updateQuantity,
     removeFromCart,
     clearCart,
+    getTotal,
     fetchCart,
   ]);
 
